@@ -1,0 +1,74 @@
+.tree-view-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    margin: 5px;
+}
+
+.tree-view-tree {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 25%;
+}
+
+.tree-view-grid {
+    position: absolute;
+    width: 75%;
+    top: 0;
+    bottom: 0;
+    right: 0;
+}
+
+.loading-spiner {
+    z-index: 2000;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+}
+
+.grid-container-cmp {
+    position: absolute;
+    left: 0;
+    top: 40px;
+    right: 0;
+    bottom: 0;
+}
+
+.btn-toolbar {
+    display: flex;
+    align-items: center;
+    height: 39px;
+}
+
+.btn-toolbar #toolbar-spinner {
+    margin-right: 5px;
+}
+
+.btn-toolbar .btn-group,
+.btn-toolbar .btn-docs {
+    float: none;
+}
+
+.pull-right {
+    float: right !important;
+}
+
+.tree-view-grid-fileinfo {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 75%;
+}
+
+.tree-view-fileinfo {
+    position: absolute;
+    width: 25%;
+    top: 0;
+    bottom: 0;
+    right: 0;
+}

@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "./api/folders";
+
+message Folders {
+    string name = 1;
+    optional bool root = 2;
+    repeated Folders children = 3;
+}

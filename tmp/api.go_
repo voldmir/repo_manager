@@ -1,0 +1,227 @@
+package app
+
+import (
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+	"os"
+	"path/filepath"
+	"repo_manager/api/files"
+	"repo_manager/api/folders"
+	"slices"
+
+	"github.com/julienschmidt/httprouter"
+	"google.golang.org/protobuf/proto"
+)
+
+type MainAPI struct {
+}
+
+func (api MainAPI) foldersHandler(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	w.Header().Set("Content-Type", "application/protobuf")
+
+	repoId := filepath.Clean(ps.ByName("repoId"))
+	// repo_name := filepath.Clean(r.Header.Get("REPO_NAME"))
+	repo_name := repoId
+
+	// repo_dir := filepath.Clean(r.Header.Get("REPO_DIR"))
+	repo_dir := repoId
+	repo_path := os.Getenv("REPO_PATH")
+
+	repo_path, err := filepath.Abs(repo_path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	repo_path = filepath.Join(repo_path, repo_dir)
+
+	dir, err := os.Open(repo_path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer dir.Close()
+
+	files, err := dir.Readdir(-1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	no_skip := []string{"noarch", "x86_64", "x86_64-i586"}
+
+	b := true
+
+	f := &folders.Folders{Name: repo_name, Root: &b}
+
+	for _, file := range files {
+		if file.IsDir() {
+			name := file.Name()
+			if slices.Contains(no_skip, name) {
+				f.Children = append(f.Children, &folders.Folders{Name: name})
+			}
+		}
+	}
+
+	data, err := proto.Marshal(f)
+	if err != nil {
+		log.Fatal("Marshaling error: ", err)
+	}
+
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println(err)
+	}
+
+}
+
+func (api MainAPI) filesHandler(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+	w.Header().Set("Content-Type", "application/protobuf")
+
+	repoId := filepath.Clean(ps.ByName("repoId"))
+	// repo_name := filepath.Clean(r.Header.Get("REPO_NAME"))
+	repo_name := repoId
+
+	folder := filepath.Clean(ps.ByName("folderId"))
+
+	// repo_dir := filepath.Clean(r.Header.Get("REPO_DIR"))
+	repo_dir := repoId
+	repo_path := os.Getenv("REPO_PATH")
+
+	repo_path, err := filepath.Abs(repo_path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	repo_path = filepath.Join(repo_path, repo_dir, folder, fmt.Sprintf("RPMS.%s", repo_name))
+
+	dir, err := os.Open(repo_path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer dir.Close()
+
+	obj, err := dir.Readdir(-1)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	f := &files.Files{}
+
+	for _, file := range obj {
+		if !file.IsDir() {
+			f.Files = append(f.Files, &files.Files_File{Name: file.Name()})
+		}
+	}
+
+	data, err := proto.Marshal(f)
+	if err != nil {
+		log.Fatal("Marshaling error: ", err)
+	}
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println(err)
+	}
+
+}
+
+func (api MainAPI) Root(w http.ResponseWriter, _ *http.Request, _ httprouter.Params) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(""))
+}
+
+func (api MainAPI) fileUploadingHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+
+	folderId := filepath.Clean(ps.ByName("folderId"))
+	repoId := filepath.Clean(ps.ByName("repoId"))
+
+	// repo_name := filepath.Clean(r.Header.Get("REPO_NAME"))
+	repo_name := repoId
+	// repo_dir := filepath.Clean(r.Header.Get("REPO_DIR"))
+	repo_dir := repoId
+	repo_path := os.Getenv("REPO_PATH")
+
+	repo_path, err := filepath.Abs(repo_path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	repo_path = filepath.Join(repo_path, repo_dir, folderId, fmt.Sprintf("RPMS.%s", repo_name))
+
+	file, handler, err := r.FormFile("rpm")
+	if err != nil {
+		fmt.Println("Error Retrieving the File")
+		fmt.Println(err)
+		return
+	}
+	defer file.Close()
+	fmt.Printf("Uploaded File: %+v\n", handler.Filename)
+	fmt.Printf("File Size: %+v\n", handler.Size)
+	fmt.Printf("MIME Header: %+v\n", handler.Header)
+
+	tempFile, err := os.Create(filepath.Join(repo_path, handler.Filename))
+	if err != nil {
+		fmt.Println("Unable to create file:", err)
+		os.Exit(1)
+	}
+	defer tempFile.Close()
+
+	fileBytes, err := io.ReadAll(file)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	tempFile.Write(fileBytes)
+
+	f := &files.Files_File{Name: handler.Filename}
+
+	w.WriteHeader(http.StatusOK)
+
+	data, err := proto.Marshal(f)
+	if err != nil {
+		log.Fatal("Marshaling error: ", err)
+	}
+	_, err = w.Write(data)
+	if err != nil {
+		log.Println(err)
+	}
+}
+
+func (api MainAPI) fileDownloadingHandler(w http.ResponseWriter, _ *http.Request, ps httprouter.Params) {
+
+	folderId := filepath.Clean(ps.ByName("folderId"))
+	repoId := filepath.Clean(ps.ByName("repoId"))
+	fileId := filepath.Clean(ps.ByName("fileId"))
+
+	// repo_name := filepath.Clean(r.Header.Get("REPO_NAME"))
+	repo_name := repoId
+	// repo_dir := filepath.Clean(r.Header.Get("REPO_DIR"))
+	repo_dir := repoId
+	repo_path := os.Getenv("REPO_PATH")
+
+	repo_path, err := filepath.Abs(repo_path)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	repo_path = filepath.Join(repo_path, repo_dir, folderId, fmt.Sprintf("RPMS.%s", repo_name))
+
+	file := filepath.Join(repo_path, fileId)
+
+	fileBytes, err := os.ReadFile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(fileBytes)
+}

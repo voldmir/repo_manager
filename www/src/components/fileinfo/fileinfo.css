@@ -1,0 +1,15 @@
+.fileinfo-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    border: 1px solid #d7d7d7;
+    margin: 1px;
+    padding: 5px;
+    overflow-y: scroll;
+}
+
+.fileinfo-element {
+    padding: 1px 0;
+}

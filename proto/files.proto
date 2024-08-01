@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package api;
+
+option go_package = "./api/files";
+
+
+message Files {
+    message File {
+        string name = 1;
+    }
+    repeated File files = 1;
+}
+
+message RPM {
+    string name = 1;
+    string version = 2;
+    string release = 3;
+    string architecture = 4;
+    string distribution = 5;
+    repeated string groups = 6;
+    uint64 size = 7;
+    string license = 8;
+    repeated string source = 9;
+    string build_time = 10;
+    string build_host = 11;
+    string vendor = 12;
+    string packager = 13;
+    string url = 14;
+    string summary = 15;
+    string description = 16;
+}

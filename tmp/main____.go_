@@ -1,0 +1,93 @@
+package main
+
+import (
+	"crypto/tls"
+	"fmt"
+	"log"
+	"time"
+
+	ldap "github.com/go-ldap/ldap/v3"
+)
+
+func main() {
+	domain := "nso.loc"
+	username := "savchenko"
+	password := "!1Lbf12e"
+	server := "nso.loc"
+	BaseDN := "dc=nso,dc=loc"
+	groups := []string{"G Admins 107 OU", "G Admins 044 OU JKH"}
+	ldap.DefaultTimeout = time.Second * 3
+
+	l, err := ldap.DialURL(fmt.Sprintf("%s://%s", "ldap", server))
+	if err != nil {
+		fmt.Println("2")
+		log.Fatal(err)
+	}
+	defer l.Close()
+
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	err = l.StartTLS(tlsConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = l.Bind(username+"@"+domain, password)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	filter := "(&(objectClass=user)(sAMAccountName=%s))"
+
+	searchRequest := ldap.NewSearchRequest(
+		BaseDN,
+		ldap.ScopeWholeSubtree,
+		ldap.NeverDerefAliases,
+		1,
+		0,
+		false,
+		fmt.Sprintf(filter, ldap.EscapeFilter(username)),
+		[]string{"sAMAccountName", "displayName"},
+		nil,
+	)
+
+	searchResult, err := l.Search(searchRequest)
+	if err != nil {
+		log.Fatal("conn.Search", err)
+	}
+
+	fmt.Println(searchResult.Entries[0].DN)
+	fmt.Println(searchResult.Entries[0].GetAttributeValue("sAMAccountName"))
+	fmt.Println(searchResult.Entries[0].GetAttributeValue("displayName"))
+
+	searchRequest.Filter = fmt.Sprintf("(member:1.2.840.113556.1.4.1941:=%s)", ldap.EscapeFilter(searchResult.Entries[0].DN))
+	searchRequest.Attributes = []string{"cn"}
+	searchRequest.SizeLimit = 0
+
+	searchResult, err = l.SearchWithPaging(searchRequest, 30)
+	if err != nil {
+		log.Fatal("conn.Search", err)
+	}
+
+	if len(searchResult.Entries) > 0 {
+
+		for _, v := range searchResult.Entries {
+			if Contains(groups, v.GetAttributeValue("cn")) {
+				fmt.Println("Is exist")
+				break
+			}
+		}
+
+	}
+}
+
+func Contains[T comparable](s []T, e T) bool {
+	for _, v := range s {
+		if v == e {
+			return true
+		}
+	}
+	return false
+}

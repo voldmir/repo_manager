@@ -1,0 +1,26 @@
+## IDE
+**/.idea
+**/.vscode
+*.iml
+
+## Backups and Local copies
+*~
+*.bak
+*.local
+*.swp
+.env
+
+## Ignore all git- and docker- stuff, hidden files
+Dockerfile*
+.[a-z]*
+## Ignore MarkDown-Docs
+*.md
+
+# local development & run
+venv/
+__pycache__/
+
+Dockerfile
+.dockerignore
+node_modules
+npm-debug.log

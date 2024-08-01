@@ -1,0 +1,56 @@
+package app
+
+import (
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
+	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
+)
+
+func Start() {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Error loading .env file")
+	}
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3001"
+	}
+
+	if os.Getenv("REPO_PATH") == "" {
+		log.Fatal("Env: REPO_PATH must be set")
+	}
+
+	mainAPI := MainAPI{}
+
+	router := httprouter.New()
+	router.GET("/", mainAPI.Root)
+	router.GET("/repo/:repoId/folders", mainAPI.foldersHandler)
+	router.GET("/repo/:repoId/files/:folderId", mainAPI.filesHandler)
+	router.POST("/repo/:repoId/files/:folderId", mainAPI.fileUploadingHandler)
+	router.GET("/repo/:repoId/files/:folderId/:fileId", mainAPI.fileDownloadingHandler)
+
+	c := cors.New(cors.Options{
+		AllowedMethods: []string{
+			http.MethodPost,
+			http.MethodGet,
+		},
+		AllowedOrigins: []string{
+			"http://10.2.124.39:3000",
+		},
+		AllowCredentials: true,
+		AllowedHeaders: []string{
+			"x-csrf-token", "x-requested-with",
+		},
+		ExposedHeaders: []string{},
+		Debug:          false,
+	})
+
+	handler := c.Handler(router)
+	http.ListenAndServe(":"+port, handler)
+}

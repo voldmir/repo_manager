@@ -1,0 +1,45 @@
+server:
+  read_timeout: 5m
+  writetimeout: 360s
+  max_header_bytes: 1048576
+  bind_addr: ":3001"
+  session_key: "45t5tghnnh"
+  document_root: "./www/build"
+  url_prefix: "http://localhost:3001/"
+  CorsOptions:
+    AllowedOrigins:
+      - http://localhost:3000
+    AllowedHeaders:
+      - "*"
+    AllowCredentials: false
+
+log_level: "debug"
+
+repositories:
+  # exec_reindex: "/usr/local/bin/MetaRepoUpdate.sh"
+  base_repo_root_path: "E:\\Project\\data_tests\\"
+  auth:
+    base_dn: "dc=example,dc=loc"
+    domain: "example.loc"
+    server: "example.loc"
+    groups:
+      - "CN=repo_manager,CN=Users,DC=example,DC=loc"
+  entries:
+    kes:
+  #     dir: "kes"
+      name: "kes"
+  #     repo_root_path: "E:\\Project\\data_tests\\"
+      # auth:
+        # base_dn: "dc=example2,dc=loc"
+        # domain: "example2.loc"
+        # server: "example2.loc"
+        # groups:
+        #   - "CN=G Allusers 008,OU=IT_Spec,OU=IT,DC=example2,DC=LOC"
+        #   - "CN=G Allusers 026,OU=OIOGV,OU=ANO,DC=example2,DC=LOC"
+    1c:
+      # dir: "1c"
+      name: "1c"
+      # repo_root_path: "E:\\Project\\data_tests\\"
+      auth:
+        groups:
+          - "CN=repo_manager,CN=Users,DC=example,DC=loc"
