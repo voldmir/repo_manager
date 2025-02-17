@@ -69,7 +69,7 @@ func (a *AuthLdap) ldapSearchUser(conn *ldap.Conn, username string, conf config.
 		gfilter = append(gfilter, fmt.Sprintf("(memberOf=%s)", ldap.EscapeFilter(el)))
 	}
 
-	filter := fmt.Sprintf("(&(sAMAccountName=%s)%s)", ldap.EscapeFilter(username), strings.Join(gfilter, ""))
+	filter := fmt.Sprintf("(&(sAMAccountName=%s)(|%s))", ldap.EscapeFilter(username), strings.Join(gfilter, ""))
 
 	fmt.Println(filter)
 	fmt.Println(strings.Join(baseDn, ","))
